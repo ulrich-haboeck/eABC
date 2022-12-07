@@ -1,0 +1,345 @@
+%To elaborate on the technical details involving zero-knowledge proofs we assume 
+In the proofs of both Theorem \ref{thm:blindAGHO} (Section \ref{s:proofAGHO}) and Theorem \ref{thm:EABC} (Section \ref{s:proofEABC}) we assume that all $\nizk$ are instantiated in the common reference string model. 
+However, we point out that our choice of model is just for the sake of readability (replacing seemingly hand-waivy generic arguments by concrete steps), and that the presented proofs are easily adapted to other models (such as the random oracle model, e.g.).
+
+
+\subsection{Proof of Theorem \ref{thm:blindAGHO}}
+\label{s:proofAGHO}
+
+
+In the proof of the blindness property of our restrictive blind AGHO scheme, we shall make use of the following well-known self-reducibility of the DDH problem, which goes back to \cite{Stadler:1996} and has been extended in \cite{Bellare:2000} to justify secure randomness re-use in mutli-recipient ElGamal encryption.
+\begin{lemma}[\cite{Bellare:2000}]
+\label{lem:DDH}
+Let $\{G_\lambda\}_{\lambda\in\N}$ be a family of groups for which the DDH assumption hold, and   $l=l(\lambda)\in\N$  some 
+polynomial in $\lambda$.
+Then the same assumption holds for the decisional problem of  `joint' DH triplets $(X_i,Y_i,Z_i)_{i=1}^l$ with $X_1=\ldots = X_l$.
+That is, for any $\ppt$ algorithm $\adv$, the advantage
+\begin{multline*}
+%\advantage{}{\mathcal A} = 
+\Big| P\left[\adv\left(g, (g^a, g^{b_i}, g^{a\cdot b_i})_{i=1}^l\right)= \text{true} \right]  
+-
+P\left[\adv\left(g, (g^a, g^{b_i}, g^{c_i})_{i=1}^l\right)= \text{true} \right] \Big| 
+\end{multline*}
+is bounded by some negligible function in $\lambda$, where  
+the probabilities are taken over all random choices $g\sample G$, $a\sample\Z_q$, $b_i$,$c_i\sample\Z_q$, and all random coins of $\adv$.
+\end{lemma}
+
+For the sake of completeness we give a proof of Lemma \ref{lem:DDH}.
+\begin{proof}
+We construct a randomized reduction from the single DDH problem to that of `joint' triplets, using a standard re-randomization technique. 
+
+For any single triplet $(X,Y,Z)=(g^{a}, g^b, g^c)\in G_\lambda^3$, consider its polynomially many re-randomizations
+\begin{align*}
+(X',Y_i',Z_i')_{i=1}^l&= \left( X, Y^{e_i}\cdot g^{u_i}, Z^{e_i}\cdot X^{u_i}\right)_{i=1}^l =
+\\
+&=\left( g^{a}, g^{b\cdot e_i + u_i}, g^{c\cdot e_i+ a\cdot u_i}\right)_{i=1}^l,
+%\\
+%&=
+%\begin{pmatrix}
+%X^d & Y^{e_1}\cdot g^{u_1} &  Z^{d\cdot e_1}\cdot X^{u_1}
+%\\
+%\vdots & \vdots & \vdots
+%\\
+%X^d & Y^{e_{l}}\cdot g^{u_{l}} &  Z^{d\cdot e_{l}}\cdot X^{u_{l}}
+%\end{pmatrix} 
+%=
+%\begin{pmatrix}
+%g^{a\cdot d} & g^{b\cdot e_1+ u_1} &  g^{d\cdot (c\cdot e_1+ a\cdot u_1)}
+%\\
+%\vdots & \vdots & \vdots
+%\\
+%g^{a\cdot d} & g^{b\cdot e_{l}+ u_{l}}&  g^{d\cdot (c\cdot e_{l}+ a\cdot u_{l})}
+%\end{pmatrix},
+\end{align*}
+by sampling $e_i, u_i\sample\Z_q$, $1\leq i \leq l(\lambda)$.
+If $a\cdot b = c$, then each linear mapping  
+$\Lambda_i$ which sends $(e_i, u_i)$ to $\left(b\cdot e_i+u_i, c\cdot e_i + a\cdot u_i\right)$, is $q$--to--$1$.
+Hence our re-randomization results in a uniform selection of $l$-tuples of joint DH triplets with $X=g^a$.
+On the other hand, if $a\cdot b \neq c$, then $\Lambda_i$ is bijective and therefore induces a uniform distribution on the set of arbitrary triplets $(X,Y_i,Z_i)_{i=1}^l$ with $X=g^a$.
+%Since the latter set is of overwhelming proportion in the subspace $H=\{(X_i,Y_i,Z_i)_{i=1}^l:X_1 = X_2 = \ldots = X_n\}$, our distribution has at most negligible statistical distance $D=D(n)$ to the uniform distribution on $H$.
+
+Now any $\ppt$ distinguisher applied to the randomized $l$-tuples yields a distinguisher for the single triplet DDH in $G$.
+By the DDH assumption on $G$ the advantage of $\adv$ is negligible.%, since its advantage differs from  $\advantage{}{\adv}$ by at most $D(n)$.
+%\begin{align*}
+%\Big|P\left[\adv'(g, g^a, g^b, g^{a\cdot b})= \text{``true''} \right] - P\left[\adv'(g, g^a, g^b, g^{a\cdot b})= \text{``true''} \right]\Big| 
+%\end{align*}
+\end{proof}
+
+
+\subsubsection{Blindness.}
+To show blindess of the restrictive  blind AGHO scheme, suppose that the DDH assumption holds in $\mathbb G$.
+Starting with the blindness experiment implicitly described by Definition \ref{def:blindness}, 
+ and gradually changing the actions on the user side of the signing protocol (Definition \ref{prot:blindAGHO}), we give a sequence of indistinguishable games for the adversary $\adv$, which eventually ends up at a game characterizing the hiding property of $\COM$.
+% \begin{center}
+%\procedure{Experiment $\mathsf{Exp}_{\adv}^{COM-hiding}(\lambda)$}{
+%pp \leftarrow \param(\lambda); 
+%\\
+%(vk^*, x_0^*, x_1^*,st) \leftarrow \mathsf \adv(pp); 
+%%\\
+%%\pcind \text{ such that $f(y^*,(m_i^*,w_i^*))=1$, $i\in\{0,1\}$}
+%\\
+%\pcfor  i =  0, 1 \pcdo
+%\\
+%\pcind 
+%((w_i,com_i,\sigma_i),st) \leftarrow \big\langle\user(vk, x_i^*), \adv(st)\big\rangle
+%\\
+%\pcif \sigma_0 = \bot \lor \sigma_1 = \bot \pcthen\pcind (\sigma_0,\sigma_1) = (\bot,\bot)
+%\\
+%b \sample\{0,1\}; 
+%~ b^* \leftarrow \mathsf \adv(st, (com_b,\sigma_b),(com_{1-b},\sigma_{1-b}))
+%\\
+%\pcif b^*=b \pcthen \pcind\pcreturn{1} \pcind\pcelse\pcreturn{0}
+% }
+% \end{center}
+
+\begin{description}
+\item
+\emph{Game 1} is the experiment implicitly defined by Definition \ref{def:blindness} in which $\adv$ is successful, whenever its guess $b^*$ is correct.
+
+\item
+\emph{Game 2} is as Game 1, except that we replace the common reference string for the second $\nizk$ (used in Step 3 of Definition \ref{prot:blindAGHO}) in $pp$ by a simulated one, to which we know  the trapdoor information for the extractor.
+
+\item
+%\emph{(Decoupling, Preparation)} 
+\emph{Game 3} uses the extractor's trapdoor information from Game 2 to obtain $sk^*=(v,(w_i),z)$ belonging to $vk^*$ from a valid $\pi_S$, skip the user's deblinding operations in Step 4 of Definition \ref{prot:blindAGHO} and directly output $\sigma = (\overline R^f, \overline R^{vf} \cdot G^z\cdot \prod_{j=1}^l m_j^{w_j}, \overline T^\frac{1}{f})$ instead.
+Since the extractor succeeds with overwhelming probability, this output is computationally indistinguishable from that of Game 2.
+
+\item
+\emph{Game 4} is as Game 3, except that we replace the common reference string for the first $\nizk$ in $pp$ by a simulated one, to which we know  the trapdoor key for the simulator.
+
+\item
+\emph{Game 5}:
+%The changes between Game 3 and Game 2 are purely syntactical:
+Based on Game 4 we first perform the following syntactical change.
+Instead of generating $(G_1,G_2,G_3)$, $\overline m$, $\overline P$ as in Step 1 of Definition \ref{prot:blindAGHO}, we query an external random source of $(l+1)$-tuples $(X,Y_i,Z_i)_{i=0}^l$ of joint DH triplets with $X\neq 1_\mathbb{G}$, choose $f\sample \Z_q^*$ and set
+\begin{align*}
+(G_1,G_2,G_3) &= (X, G^f\cdot Y_0^{-1}, Z_0),
+\\
+\overline m &= m\cdot (Y_i^{-1})_{i=1}^l,
+\\
+\overline P &= (Z_i)_{i=1}^l.
+\end{align*} 
+Then, as we do not know the exponents of $G_1$, $G_2$, $G_3$, we use the trapdoor key from Game 4 to 
+simulate a valid proof $\pi_U$ on input $(G_1,G_2,G_3)$, $\overline m$ and $\overline P$.
+%(Again, by replacing the common reference string by a simulated one, to which we know the trapdoor for the simulator).
+
+\item
+\emph{Game 6} is as Game 5, but we replace the external random source of joint DH triplets (satisfying $X\neq 1$) by one as stated by Lemma \ref{lem:DDH} (i.e., with no restriction on $X$). 
+Since the distributions of the random sources are statistically close, this change is computationally indistinguishable for the adversary. 
+
+\item
+In \emph{Game 7} we finally substitute the source of DH triplets in Game 6 by one of arbitrary random triplets (sharing the same $X$-coordinate).
+By the DH assumption on $\mathbb G$ and Lemma \ref{lem:DDH}, the adversary's view in Game 7 is computationally indistinguishable from that of Game 6.
+\end{description}
+
+Note that in Game 7 the output $\sigma$ is either $\bot$ or a valid signature of the queried message $m$ with signature randomness $\overline R^{f}$ entirely independent from the adversary's view (note that a valid signature implies that $\overline R\neq 1_\mathbb{G}$).
+Moreover, since $(G_1,G_2,G_3)$, $\overline m$, $\overline P$ hides the queried message perfectly, and by the witness indistinguishability of $\pi_U$, we see that the success probability of guessing $b$ in Game 7 is equal to that of distinguishing two commitments $com_b$, $com_{1-b}$ without their openings.
+By the hiding property of $\COM$, the latter probability is negligible.
+
+Altogether, we conclude  that the success probability of $\adv$ in  all other games is negligible, too, proving blindness.
+
+
+\subsubsection{Unforgeability.}
+
+First of all, note that in Definition \ref{prot:blindAGHO} the exponents $(e, f_1, f_2)$ are uniquely determined by $(G_1,G_2,G_3)$, and   $\overline\sigma=(\overline R, \overline S_1, \overline S_2, \overline T)$ as returned by an honest signer is uniformly distributed on the relation
+\begin{align*}
+\bigg\{(\overline R, \overline S_1, \overline S_2, \overline T)\in \mathbb G^*\times\mathbb G\times \mathbb G&\times\mathbb H^* : 
+\\
+&\verify\left(vk, \overline m\cdot \overline P^{\nicefrac{1}{e}}, \left(\overline R^f, \overline S_1\cdot \overline S_2^{\nicefrac{1}{e}}, \overline T^{\nicefrac{1}{f}} \right)\right) = 1\bigg\}. 
+\end{align*}
+This fact follows immediately from the signer's choice of $r$ and the random decomposition of $z=z_1+z_2$.
+Hence, once given $(e, f_1, f_2)$, we may (perfectly) simulate $\overline\sigma$ by calling an ordinary AGHO signing oracle to obtain a valid signature $\sigma = (R,S,T)$ on $m =\overline m\cdot \overline P^{\nicefrac{1}{e}}$, and compute 
+$
+\overline\sigma= \left(R^{\nicefrac{1}{f}}, S_1, \left(S\cdot S_1^{-1}\right)^e, T^f\right)
+$ 
+using $f= f_1+f_2$ and a randomly sampled $S_1\sample\mathbb G$.
+%This observation will be the key idea in our reduction of strong unforgeability of the blind AGHO scheme (Definition \ref{def:sEUFblind}) to that of the ordinary AGHO signature.
+
+%We shall use this fact to replace the `signing procedure'  in Step 3 of Definition \ref{prot:blindAGHO} by an ordinary AGHO oracle, thereby reducing unforgeability of the blind scheme to that of the unblinded one.
+
+Now, to prove unforgeability of the blind AGHO signature we consider the following sequence of indistinguishable games for a $\ppt$ adversary $\adv$:
+
+\begin{description}
+\item
+\emph{Game 1} is the experiment implicitly described by Definition \ref{def:sEUFblind}, 
+in which $\adv$ is successful, whenever it produces more valid differing certificates $(m_i^*,\sigma_i^*)$  than queried under some adversarily chosen value $x^*$. 
+(Recall that every successful query is logged in the list $Q$ managed by the experiment.)
+ 
+\item
+\emph{Game 2} exchanges the common reference string of the second $\nizk$ in Game 1 by a simulated one, to which we know the  trapdoor key for the simulator.
+
+\item
+\emph{Game 3} is as Game 2, except that using the witnesses to produce $\pi_S$ in Step 3 of Definition \ref{prot:blindAGHO}, we use the simulator to generate a valid $\pi_S$ on input $\overline\sigma= (\overline R, \overline S_1, \overline S_2, \overline T)$ instead.
+%As such change induces a computationally indistinguishable distribution of $\pi_S$, the success probability in Game 3 equals that of Game 2.
+%As the output distribution of the simulator is computationally indistinguishable from 
+
+ \item
+\emph{Game 4} replaces the common reference string for the first $\nizk$ in Game 3 by a simulated one, to which we are given the extractor's trapdoor information.
+
+\item
+\emph{Game 5} is based on Game 4, but 
+we replace the generation of $\overline\sigma$ in Step 3 of Definition \ref{prot:blindAGHO} as follows:
+we use the extractor  to obtain the witnesses $(e,f_1,f_2)$ and $(m,w)$ with $\verify_{COM}(m,(x,w))=1$ from a valid $\pi_U$, determine $\overline\sigma$ using an ordinary AGHO signing oracle as described above, and attach $w$, $(m,\sigma)$ to the entry $x$ in $Q$. 
+%As the extractor succeeds with overwhelming probability on valid $\pi_U$'s, this change is computationally indistinguishable.
+\end{description}
+
+Game 5 is a $\ppt$ algorithm which queries an ordinary AGHO signing oracle on a commitment $m$ on the value $x$ of the blind signing session.
+By strong unforgeability of the AGHO signature (Theorem \ref{thm:AGHO}) we have that, with overwhelming probability every adversarily derived $(m_i^*,\sigma_i^*)$ matches (exactly\footnote{By the probabilistic nature of the AGHO scheme, the signatures returned by the signing oracle are overwhelmingly all different.}) one of the entries in $Q$.
+Moreover, by the binding property of $\COM$, the probability that $x^*$ does not equal $x$ of its matching entry in $Q$ is negligible.
+In other words, the success probability in Game 5 is negligible in $\lambda$.
+
+Since all  changes between the above games are indistinguishable for $\adv$, we have proved strong unforgeability for the restrictive blind AGHO scheme in the generic group model.
+%\end{proof}
+
+
+%\begin{remark}
+%\label{rem:blindAGHO}
+%In a similar way one may construct a blind signature scheme based on the re-randomizable AGHO signature from \cite{AGHO:2011}
+%given by $\sigma=(R,S,T)$ with 
+%\begin{align*}
+%R = G^r,  ~ S= R^v, ~ T= \left(H \cdot \prod_i m_i^{-u_i}\right)^\frac{1}{r}, 
+%\end{align*}
+%where $(m_i)_i\in\mathbb H^l$, $sk=((u_i)_i, v)\in\Z_q^l\times\Z_q$, and 
+%$r\sample \Z_q$.
+% %and $vk=\left((G^{u_i})_i, H^v\right)\in\mathbb G^l\times \mathbb H$.
+%%given in \cite{AGHO:2011}, instead of letting a DH-like procedure determine the signature's randomness.
+%The user randomizes the messages as above, sends $G_1=G^e$, $\overline m$, and $\overline P$ to the issuer, who  derives $\overline R = G^r$, $\overline S = \overline R^v$, and 
+%\begin{align*}
+%\overline T_1 &= \left(H^{\alpha_1} \cdot \prod_i m_i^{-u_i}\right)^{\nicefrac{1}{r}},
+%&
+%\overline T_2 &= \left(H^{\alpha_2} \cdot \prod_i m_i^{-u_i}\right)^{\nicefrac{1}{r}},
+%\end{align*}
+%using a random decomposition of $1=\alpha_1 + \alpha_2$.
+%The user then assembles and re-randomizes the signature in one step by $f\sample\Z_q$, and
+%\[
+%(R,S,T)= \left(\overline R^f,  \overline S^f, (\overline T_1\cdot \overline T_2^\frac{1}{e})^{\nicefrac{1}{f}}\right).
+%\]
+%\end{remark}
+
+
+
+\subsection{Proof of Theorem \ref{thm:EABC}}
+\label{s:proofEABC}
+%We first show unforgeability and non-deceivability,  and then privacy and unlinkability  of our EABC system.
+The security properties of the building blocks of the EABC system follow from Section \ref{s:preliminaries}:
+Statement \ref{thm:EABC:i} summarizes Proposition \ref{prop:BBSindcpa}, \ref{prop:BBSrerand} and \ref{prop:BBSanonymous}, and statement \ref{thm:EABC:ii} follows from Theorem \ref{thm:EABC}, as commitment by BBS encryption is perfectly binding and computationally hiding under the DDH assumption in $\mathbb G$.
+Based on those properties we show unforgeability, non-deceivability, privacy and unlinkability of the EABC system.
+
+%As in Appendix \ref{s:proofAGHO}, we assume that the reader is familiar with the standard arguments involving zero-knowledge proofs, hence we omit the technical details whenever using $\nizk$ properties   such as zero-knowledgeness, soundness, or (simulation-sound) extractrability.
+
+\subsubsection{Unforgeability.}
+Since our adversary model allows arbitrary wallet-service collusions, an attacker is trivially able to retrieve the secret keys of the attributes once disclosed to him, which in the worst case is all attribute keys of all  credentials of a user.
+Therefore, unforgeability of presentations is tied to the unforgeability of their ownership proofs, which involve the only secret assumedly unknown to the attacker.
+To prove unforgeability, we gradually turn a $\ppt$ presentation forger $\adv$ from $\ExpForge$ into a solver for the discrete logarithm problem in $\mathbb G$, which succeeds on one out of polynomially many random instances.
+
+\begin{description}
+\item
+\emph{Game 1}
+is  $\ExpForge$ from Definition \ref{def:EABCunforgeability}, 
+in which $\adv$ is successful whenever it is able to serve an honest service a valid presentation $\pi^*=(\overline C^*, \pi_P^*, \pi_O^*)$ together with adversarily chosen $D^*$, $sk^*$, and $vk_I$ from the set of honestly generated issuer keys, for which  $(a_i^*)_{i\in D^*}= (\dec_{BBS}(sk^*,\overline c_i^*))_{i\in D^*}$ does not match any of the queries listed in $Q$.
+
+\item
+\emph{Game 2}
+is as Game 1, but we replace the common reference string for the ownership $\nizk$ by a simulated one, to which we know the simulator's trapdoor key.
+
+\item
+\emph{Game 3}
+is based on Game 2, but we replace the generation of a new honest user's identity keys  by some arbitrary element $pk_U= g_U\in \mathbb G$  supplied by an external, uniformly distributed random source $\mathcal U_{\mathbb G}$.
+Not knowing the corresponding secret keys, i.e. the exponent of $g_U$ with respect to $g$, we use the simulator (together with it's trapdoor from Game 2) to generate the valid ownership proofs inside the user-presentation oracle  $\mathsf{U}_P$ (as well as $\pi_U$ in  $\mathsf{U}_I$ and $\mathsf{UI}$ whenever authentication of the user is demanded). 
+%and a simulator to generate valid presentation proofs without knowing the re-encryption keys.
+%As such change induces a computationally indistinguishable distribution of ownership proofs, the success probability of Game 2 differs only negligibly from that in Game 1.
+
+\item
+\emph{Game 4}
+is as Game 3, whereas we use the (simulation) extractability of the two linked $\nizk$s to retrieve from  $\pi_P^*$ and $\pi_O^*$ an encrypted credential $C$ from $vk_I$ which decrypts to the attributes $(a_i^*)_{i\in D^*}$,  together with the secret key $sk$ for the pseudonym used in $C$.
+%Again, the success probabilities of Game 3 and Game 2 differ only by a negligible amount. 
+\end{description}
+
+By unforgeability of the  restrictive blind AGHO scheme, if $(a_i^*)_{i\in D^*}$ does not match any of the adversary's queries, then $C$ must belong to one of the honest user's $pk_U$.
+In other words, the derived $sk$ is the discrete logarithm of one of the polynomially many $pk_U=g_U$ queried from $\mathcal U_{\mathbb G}$ during the experiment.
+By the DDH assumption on $\mathbb G$ the success probability in Game 4 is negligible.
+Since the changes between the above games are compuationally indistinguishable, the same follows for Game 1, proving unforgeability of the EABC system.
+
+
+
+
+\subsubsection{Non-deceivability.}
+The intuition here is as follows:
+Since $\adv$ may get to know all attribute keys of a user (as discussed above), non-deceivability is tied to the infeasability of mapping an honest user's one-time pseudonym onto another of her credentials.
+Technically, we instrument a successful $\adv$ in $\ExpDecv$ to obtain a solver for the following type of discrete logarithm problem:
+\\
+\emph{
+Given polynomially many uniformly chosen random elements $(g_i)_{i=1}^{p(\lambda)}$ from $\mathbb G$, find an exponent $e$ such that $g_{i}^{e}= g_j$ for some $i\neq j$.
+}
+%Using standard arguments (re-randomization) such solver can be turned into an discrete logarithm solver for random instances.
+\\
+By the DDH assumption on $\mathbb G$, the success probability of such a solver is negligible.
+
+\begin{description}
+\item
+\emph{Game 1} is $\ExpDecv$ from Definition \ref{def:EABCnondeceivability}, where $\adv$ is successful whenever it is able to  change the intended attributes $(a_i)_{i\in D}$ in the interaction with an honest user's $\mathsf{U}_P(h, D)$ and an honest service's $\service(D,vk_I)$.
+That is, it is able to generate a presentation, i.e. $\left(d_i^* \right)_{i\in D}$,  $\left( \overline{pk}^*_i, \overline c_i^*\right)_{i \notin D}$, $\overline T^*$, and a valid $\pi_P^*$ for it, which is compliant with to the user's one-time-pseudonym $\overline c_0$ for $C=h(C)$,  but $(a_i^*)_{i\in D} = (\dec_{BBS}(sk', d_i^*))_{i\in D}\neq (a_i)_{i\in D}$.
+
+\item
+\emph{Game 2} is as Game 1, but with the following syntactical change in the issuance oracles $\mathsf{U}_I$ and $\mathsf{UI}$: 
+We generate $c_0=(g_C,g_C^{\sk_U})$  by quering an external source $\mathcal U_{\mathbb G}$ of uniformly distributed random elements $g_C$ from $\mathbb G$. 
+ 
+\item
+\emph{Game 3} is as Game 2, except that we replace the common reference string for the presentation $\nizk$ by a simulated one, while providing us with the extractor's trapdoor information. 
+ 
+\item
+\emph{Game 4} is as Game 3, but whenever $\adv$ yields a succesful presentation we use the extractor on $\pi_P^*$ to derive a valid credential $C'=\{(c_0', (pk_i',c_i')_{i}),\sigma'\} \neq C$ 
+%$C'=(c_0',(pk_i',c_i')_i, \sigma$
+which incorporates the attribute encryptions of $(a_i^*)_{i\in D}$, and an exponent $e'$ which relates the honest user's $\overline c_0$ to the one in $C'$ by $c_0' = \overline c_0^{e'}$.
+With  $rk_0'$ supplied by the user, the pseudonyms of the $C$ and $C'$ are related by
+$c_0' = c_0^{e}$ with $e= \nicefrac{e'}{rk_0'}$.
+%Since the extraction works with overwhelming probability, the success probabilities between Game 2 and Game 3 differ only by a negligible amount.
+\end{description}
+
+By unforgeability of the blind AGHO scheme (Theorem \ref{thm:blindAGHO}) we conclude that with overwhelming probability $C'$ as derived from the presentation in Game 4 is one of the other regularily issued credentials, and hence it incorporates another pseudonym $(g_{C'}, g_{C'}^{sk_U})$ from $U$.
+Thus Game 4 is a $\ppt$ algorithm which queries $\mathcal U_{\mathbb G}$ polynomially often and eventually produces an exponent $e$ which solves the discrete logarithm problem between two of the random elements from $\mathcal U_{\mathbb G}$.
+As stated above, the success probability of such solver is negligible, and so is that of Game 4.
+%probability to produce a   presentation compliant to $\overline c_0$ as provided by the user, but which decrypts to $(a_i^*)_{i\in D}\neq (a_i)_{i\in D}$.
+
+Since all changes between the above games are compuationally indistinguishable, the success probability in Game 1 is negligible, too, proving non-deceivability.
+ 
+ 
+ 
+\subsubsection{Privacy}
+%In  $\ExpPriv$  the adversary $\adv$ instruments the entire EABC system to exfiltrate information for its guess $b^*$ on the restrictive blind AGHO signing session on $x_0= (pk_{U_0},A_0)$ and $x_1=(pk_{U_1},A_1)$, where $A_0|_D = A_1|_D$.
+Note that $\ExpPriv$ from Definition \ref{def:EABCprivacy} paraphrases the blindness experiment from Definition \ref{def:blindness} with $x_0= (sk_{U_0},A_0)$ and $x_1=(sk_{U_1},A_1)$, under the strengthening that $\adv$ (again, by collusion) might retrieve the attribute keys $(sk_i)_{i\in D}$ of the subset $D$ for which $A_0|_D = A_1|_D$.
+Nevertheless, it can be seen directly from the proof given in Appendix \ref{s:proofAGHO} that blindness holds even if the adversary is given access to `partial openings' of the commmitment, i.e. $(sk_i)_{i\in D}$.
+With this observation, privacy follows from blindness of the restrictive blind AGHO scheme.
+% (Theorem \ref{thm:blindAGHO} as our commitment by BBS encryption is computational hiding under the DDH assumption in $\mathbf G$).
+%which holds, as by  Proposition \ref{prop:BBSindcpa} our commitment by BBS encryption is computationally hiding under the DDH assumption on $\mathbb G$.
+%Note that the experiment $\ExpPriv$ from Definition \ref{def:EABCprivacy} is just an ensemble around the  blindness AGHO signing session with messages  $m_0^*=C_1$ and $m_0^*= C_2$ (and their corresponding restriction witnesses) built from $A_1$ and $A_2$ (according to the credential preparation phase in Protocol \ref{prot:issuance}).
+%By a pure syntactical change, one may instrument a successful $\adv$ in  $\ExpPriv$ as a distinguisher for the blindness experiment from Defintion \ref{def:blindness}.
+%Together with blindness of the restrictive blind AGHO scheme, Theorem \ref{thm:blindAGHO}, the success probability of $\adv$ is negligible.
+
+
+\subsubsection{Unlinkability}
+Recall that besides  $\pi_P$ and $\pi_O$, a presentation of $C$ is comprised of the one-time pseudonym $\overline c_0$, the re-randomized re-encryptions $(d_i)_{i\in D}$ of the disclosed attributes $(a_i)_{i\in D}$, and the  randomized elements $(\overline pk_i, \overline c_j)_{i\notin D}$, and $\overline T$.
+%To show unlinkability, we start with the unlinkability experiment  from Definition \ref{def:EABCunlinkability}, and elim the involved credential $C_b$ and all its derived data by random in the presentation session with the adversary by ra
+
+\begin{description}
+\item
+\emph{Game 1} is $\ExpUnlink(\lambda)$   from Definition \ref{def:EABCunlinkability} which yields success if the adversary $\adv$ is able to guess $(pk_{U_b}, C_b)$ behind the presentation session.
+ 
+ \item
+\emph{Game 2} and \emph{Game 3} are based on Game 1, where we gradually replace the common reference strings for the ownership and presentation $\nizk$ by simulated ones, for which we know the simulator's trapdoor keys.
+
+\item
+In \emph{Game 4} and \emph{Game 5} we gradually replace $\pi_O$ and $\pi_P$ of Game 3 by simulations on $\overline c_0$, and $\overline c_0$, $(d_i)_{i\in D}$, $(\overline{pk}_i,\overline c_i)_{i\in D}$, $\overline T$, respectively.
+
+ \item
+\emph{Game 6} is as Game 5, but now we finally replace $\overline c_0$, $(d_i)_{i\in D}$ by fresh attribute encryptions $\enc_{BBS}(pk_{U_b},1)$, $\left(\enc_{BBS}(sk',a_i)\right)_{i\in D}$, and $(\overline pk_i, \overline c_j)_{i\notin D}$, $\overline T$ by arbitrary random elements.
+By the re-randomization property of the BBS scheme together with the witness hiding property of both $\nizk$, the resulting presentation is computationally indistinguishable from that in Game 5. 
+\end{description}
+
+Note that Game 6 paraphrases the experiment from Proposition \ref{prop:BBSanonymous}, in which the adversary tries to guess the random bit $b$ from $\enc_{BBS}(pk_{U_b},1)$, $b=0,1$.
+By anonymity of the BBS scheme, which holds under the DDH assumption on $\mathbb G$, the success  probability in Game 6 is negligible.
+
+As all changes between the above games are computationally indistinguishable, the success probabyility in Game 1 is negligible, too.
+This shows unlinkability, and the proof of Theorem \ref{thm:EABC} is complete.
+
+
